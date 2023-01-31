@@ -35,6 +35,8 @@ AGlobalGameJam2023Character::AGlobalGameJam2023Character()
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+	GetCharacterMovement()->GravityScale = 0.f;
+	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
