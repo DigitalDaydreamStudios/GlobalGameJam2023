@@ -48,14 +48,6 @@ void ARooterShooterPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	//Add Input Mapping Context
-	//if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	//{
-	//	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-	//	{
-	//		Subsystem->AddMappingContext(DefaultMappingContext, 0);
-	//	}
-	//}
 }
 
 // Called every frame
@@ -72,7 +64,8 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	ARooterPlayerController* RPC = Cast<ARooterPlayerController>(Controller);
 	check(EIC && RPC);
-	EIC->BindAction(RPC->MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
+	EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
+	EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
 
 	ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
 	check(LocalPlayer);
@@ -80,57 +73,48 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
 	check(Subsystem);
 	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(RPC->PawnMappingContext, 0);
+	Subsystem->AddMappingContext(DefaultMappingContext, 0);
 
-	//// Set up action bindings
-	//if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-
-	//	//Moving
-	//	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
-
-	//	//Looking
-	//	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
-
-	//}
 }
 
 void ARooterShooterPawn::Move(const FInputActionValue& Value)
 {
 	FVector Input = Value.Get<FInputActionValue::Axis3D>();
 
-	AddMovementInput(GetActorRotation().RotateVector(Input), MoveScale);
+	//AddMovementInput(GetActorRotation().RotateVector(Input), MoveScale);
 
-	//// input is a Vector2D
-	//FVector2D MovementVector = Value.Get<FVector2D>();
+	// input is a Vector2D
+	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	//if (Controller != nullptr)
-	//{
-	//	// find out which way is forward
-	//	const FRotator Rotation = Controller->GetControlRotation();
-	//	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	if (Controller != nullptr)
+	{
+		// find out which way is forward
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-	//	// get forward vector
-	//	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		// get forward vector
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
-	//	// get right vector 
-	//	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// get right vector 
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	//	// add movement 
-	//	AddMovementInput(ForwardDirection, MovementVector.Y);
-	//	AddMovementInput(RightDirection, MovementVector.X);
-	//}
-	//UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
+		// add movement 
+		AddMovementInput(ForwardDirection, MovementVector.Y);
+		AddMovementInput(RightDirection, MovementVector.X);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
 }
 
 void ARooterShooterPawn::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	//FVector2D LookAxisVector = Value.Get<FVector2D>();
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	//if (Controller != nullptr)
-	//{
-	//	// add yaw and pitch input to controller
-	//	AddControllerYawInput(LookAxisVector.X);
-	//	AddControllerPitchInput(LookAxisVector.Y);
-	//}
+	if (Controller != nullptr)
+	{
+		// add yaw and pitch input to controller
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
 }

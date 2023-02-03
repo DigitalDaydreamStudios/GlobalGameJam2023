@@ -18,9 +18,4 @@ public:
 	/** Allows the PlayerController to set up custom input bindings. */
 	virtual void SetupInputComponent() override;
 
-	UPROPERTY()
-	class UInputMappingContext* PawnMappingContext;
-	
-	UPROPERTY()
-	class UInputAction* MoveAction;
 };
