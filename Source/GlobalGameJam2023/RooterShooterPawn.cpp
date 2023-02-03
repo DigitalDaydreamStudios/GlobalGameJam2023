@@ -62,19 +62,23 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	//APlayerController* RPC = Cast<APlayerController>(Controller);
 	ARooterPlayerController* RPC = Cast<ARooterPlayerController>(Controller);
-	check(EIC && RPC);
-	EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
-	EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
+	
+	if (RPC != nullptr) {
+		check(EIC && RPC);
+		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
+		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
 
-	ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
-	check(LocalPlayer);
-	UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-	check(Subsystem);
-	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(DefaultMappingContext, 0);
-
+		ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
+		check(LocalPlayer);
+		UEnhancedInputLocalPlayerSubsystem* Subsystem =
+			LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+		check(Subsystem);
+		Subsystem->ClearAllMappings();
+		Subsystem->AddMappingContext(DefaultMappingContext, 0);
+	}
+	else{ UE_LOG(LogTemp, Warning, TEXT("Make Sure Controller is set to ARooterPlayerController")); }
 }
 
 void ARooterShooterPawn::Move(const FInputActionValue& Value)
