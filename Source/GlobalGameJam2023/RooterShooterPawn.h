@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
+#include "Engine/StaticMeshActor.h"
 #include "Components/CapsuleComponent.h"
 #include "RooterShooterPawn.generated.h"
 
@@ -51,10 +52,19 @@ public:
 	class UFloatingPawnMovement* Movement;
 
 	UPROPERTY(EditAnywhere)
+	class UCableComponent* Cable;
+
+	UPROPERTY(EditAnywhere)
+	class UPhysicsConstraintComponent* PhysRope;
+
+	UPROPERTY(EditAnywhere)
 	float MoveScale;
 
 	UPROPERTY(EditAnywhere)
 	float ShootDistance = 1000.f;
+
+protected:
+	class UPhysicsConstraintComponent* PhysConstraint;
 
 protected:
 	// Called when the game starts or when spawned
@@ -68,6 +78,8 @@ protected:
 
 	// Shoot action
 	void Shoot();
+
+	void CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA);
 
 public:	
 	// Called every frame
