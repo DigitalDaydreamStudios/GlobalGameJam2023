@@ -69,6 +69,7 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		check(EIC && RPC);
 		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
 		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
+		EIC->BindAction(ShootAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Shoot);
 
 		ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
 		check(LocalPlayer);
@@ -106,7 +107,6 @@ void ARooterShooterPawn::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
 }
 
 void ARooterShooterPawn::Look(const FInputActionValue& Value)
@@ -120,5 +120,18 @@ void ARooterShooterPawn::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
+}
+
+void ARooterShooterPawn::Shoot() {
+	UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
+
+	FHitResult Hit;
+	FVector TraceStart = GetActorLocation();
+	FVector TraceEnd = GetActorLocation() + (FollowCamera->GetForwardVector() * 1000.f);
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+
 }
