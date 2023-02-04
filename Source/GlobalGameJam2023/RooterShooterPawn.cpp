@@ -25,13 +25,16 @@ ARooterShooterPawn::ARooterShooterPawn()
 	Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
 	SetRootComponent(Capsule);
 
+	if(Capsule == nullptr){ UE_LOG(LogTemp, Warning, TEXT("CAPSULE NULL!")); }
+	
+
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(Capsule);
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(Capsule);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 600.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -126,10 +129,12 @@ void ARooterShooterPawn::Shoot() {
 	UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
 
 	FHitResult Hit;
-	FVector TraceStart = GetActorLocation();
-	FVector TraceEnd = GetActorLocation() + (FollowCamera->GetForwardVector() * 1000.f);
+	FVector offset = FVector(0.f,0.f,50.f);
+	FVector TraceStart = GetActorLocation() + offset;
+	FVector TraceEnd = (GetActorLocation() + offset) + (FollowCamera->GetForwardVector() * ShootDistance);
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
+
 
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
 	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);

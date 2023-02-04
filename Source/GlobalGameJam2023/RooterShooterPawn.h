@@ -53,6 +53,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float MoveScale;
 
+	UPROPERTY(EditAnywhere)
+	float ShootDistance = 1000.f;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
