@@ -69,6 +69,10 @@ void ARooterShooterPawn::BeginPlay()
 void ARooterShooterPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	/*if (HookedActor != nullptr) {
+		Cable->EndLocation = HookedActor->GetActorLocation() - GetActorLocation();
+	}*/
 }
 
 // Called to bind functionality to input
@@ -147,12 +151,11 @@ void ARooterShooterPawn::Shoot() {
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
-
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
 	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
 
 	if (Hit.bBlockingHit) {
-		//Cable->SetAttachEndTo(Hit.GetActor(), Hit.GetComponent()->GetDefaultSceneRootVariableName());
+		Cable->SetAttachEndTo(Hit.GetActor(), FName(TEXT("Box")), FName(TEXT("")));
 		UE_LOG(LogTemp, Warning, TEXT("HIT!"));
 		PhysRope->ConstraintActor1 = Hit.GetActor();
 		PhysRope->ConstraintActor2 = this;
@@ -161,6 +164,8 @@ void ARooterShooterPawn::Shoot() {
 			Cast<UPrimitiveComponent>(Hit.GetActor()->GetComponentByClass(UBoxComponent::StaticClass())),TEXT("Box"),
 			Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
 		PhysRope->SetWorldLocation(GetActorLocation());
+
+		HookedActor = Hit.GetActor();
 	}
 }
 

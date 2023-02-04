@@ -63,6 +63,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	float ShootDistance = 1000.f;
 
+	class AActor* HookedActor;
+
 protected:
 	class UPhysicsConstraintComponent* PhysConstraint;
 
