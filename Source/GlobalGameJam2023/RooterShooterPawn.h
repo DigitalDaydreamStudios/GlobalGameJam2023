@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
+#include "MenuHandler.h"
 #include "RooterShooterPawn.generated.h"
 
 UCLASS()
@@ -52,6 +53,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MoveScale;
+
+	UPROPERTY(EditAnywhere)
+	UMenuHandler* MenuHandler;
 
 protected:
 	// Called when the game starts or when spawned
