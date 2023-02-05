@@ -56,6 +56,8 @@ ARooterShooterPawn::ARooterShooterPawn()
 
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
 	MoveScale = 1.f;
+
+	MenuHandler = CreateDefaultSubobject<UMenuHandler>(TEXT("MenuHandler"));
 }
 
 // Called when the game starts or when spawned
@@ -63,6 +65,7 @@ void ARooterShooterPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a RooterShooterPawn"));
 }
 
 // Called every frame

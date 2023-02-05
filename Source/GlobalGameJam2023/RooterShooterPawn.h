@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/CapsuleComponent.h"
+#include "MenuHandler.h"
 #include "RooterShooterPawn.generated.h"
 
 UCLASS()
@@ -59,6 +60,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MoveScale;
+
+	UPROPERTY(EditAnywhere)
+	UMenuHandler* MenuHandler;
 
 	UPROPERTY(EditAnywhere)
 	float ShootDistance = 1000.f;
