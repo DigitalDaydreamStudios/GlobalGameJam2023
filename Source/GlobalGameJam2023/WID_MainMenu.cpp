@@ -6,6 +6,8 @@
 #include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "WID_Leaderboards.h"
+#include "GameFramework/SaveGame.h"
+#include "SG_Timer.h"
 #include "Blueprint/UserWidget.h"
 
 
@@ -51,6 +53,20 @@ void UWID_MainMenu::NativeConstruct()
 
 void UWID_MainMenu::PlayGame()
 {
+    //Reset Save Game when you hit the play button
+    if (USG_Timer* SaveGameInstance = Cast<USG_Timer>(UGameplayStatics::CreateSaveGameObject(USG_Timer::StaticClass())))
+    {
+        // Set data on the savegame object.
+        SaveGameInstance->PlayerName = TEXT("CurrentPlayer");
+        SaveGameInstance->Time = 0.0f;
+
+        // Save the data immediately.
+        if (UGameplayStatics::SaveGameToSlot(SaveGameInstance, "CurrentPlayer-Time", 0))
+        {
+            // Save succeeded.
+        }
+    }
+
     //Get the First Level from the DataTable DT_LevelList
     FName LevelName = "LEV_1";
     UGameplayStatics::OpenLevel(GetWorld(), LevelName);
