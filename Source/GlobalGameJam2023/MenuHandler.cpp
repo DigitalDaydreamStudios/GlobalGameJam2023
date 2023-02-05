@@ -15,33 +15,28 @@ UMenuHandler::UMenuHandler()
 		UCustomUserWidget* Widget = CreateWidget<UCustomUserWidget>(GetWorld(), CustomUserWidgetClass);
 		if(IsValid(Widget))
 		{
-			Widget->AddToViewport();
+			//check what level we are on and load the correct widget
+			if (GetWorld()->GetName() == "LEV_MainMenu"){
+				UE_LOG(LogTemp, Warning, TEXT("Hello:I'm on the main menu level and I'm loading the main menu widget"));
+				Widget->AddToViewport();
+				// show mouse cursor
+				if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+				{
+					PlayerController->bShowMouseCursor = true;
+					PlayerController->bEnableClickEvents = true;
+					PlayerController->bEnableMouseOverEvents = true;
+				}
+			}else{
+				UE_LOG(LogTemp, Warning, TEXT("Hello:I'm not on the main menu level and I'm not loading the main menu widget"));
+			}
 		}
 	}else{
 		UE_LOG(LogTemp, Warning, TEXT("Hello: I'm a MenuHandler, but I don't have a WidgetClass"));
 	}
 }
 
-
 // Called when the game starts
 void UMenuHandler::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// if(IsValid(WidgetClass))
-	// {
-	// 	UCustomUserWidget* Widget = CreateWidget<WID_MainMenu>(GetWorld(), WidgetClass);
-	// 	if(IsValid(Widget))
-	// 	{
-	// 		Widget->AddToViewport();
-	// 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a MenuHandler, and I have a WidgetClass"));
-	// 	}else {
-	// 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a MenuHandler, but I don't have a WidgetClass"));
-	// 	}
-	// }
-	// else
-	// {
-	// 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a MenuHandler, but I don't have a WidgetClass"));
-	// }
-
 }
