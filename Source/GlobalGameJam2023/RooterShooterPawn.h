@@ -65,7 +65,7 @@ public:
 	UMenuHandler* MenuHandler;
 
 	UPROPERTY(EditAnywhere)
-	float ShootDistance = 1000.f;
+	float ShootDistance = 3000.f;
 
 	class AActor* HookedActor;
 
@@ -74,6 +74,8 @@ public:
 
 protected:
 	class UPhysicsConstraintComponent* PhysConstraint;
+
+	bool IsRooted;
 
 protected:
 	// Called when the game starts or when spawned

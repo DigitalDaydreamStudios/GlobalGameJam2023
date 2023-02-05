@@ -29,9 +29,9 @@ ARooterShooterPawn::ARooterShooterPawn()
 	Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
 	SetRootComponent(Capsule);
 	Capsule->SetSimulatePhysics(true);
+	Capsule->SetEnableGravity(false);
 
 	if(Capsule == nullptr){ UE_LOG(LogTemp, Warning, TEXT("CAPSULE NULL!")); }
-	
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(Capsule);
@@ -54,7 +54,6 @@ ARooterShooterPawn::ARooterShooterPawn()
 
 	PhysRope = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysRope"));
 
-
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
 	MoveScale = 1.f;
 
@@ -76,9 +75,9 @@ void ARooterShooterPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	/*if (HookedActor != nullptr) {
-		Cable->EndLocation = HookedActor->GetActorLocation() - GetActorLocation();
-	}*/
+	if (PhysRope != nullptr) {
+		DrawDebugSphere(GetWorld(), PhysRope->GetComponentLocation(), 10.f, 10, FColor(0, 181, 0), false, -1, 0, 2);
+	}
 }
 
 // Called to bind functionality to input
@@ -87,7 +86,6 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-	//APlayerController* RPC = Cast<APlayerController>(Controller);
 	ARooterPlayerController* RPC = Cast<ARooterPlayerController>(Controller);
 	
 	if (RPC != nullptr) {
@@ -148,40 +146,48 @@ void ARooterShooterPawn::Look(const FInputActionValue& Value)
 }
 
 void ARooterShooterPawn::Shoot() {
-	UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
+	if(!IsRooted){
+		UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
 
-	FHitResult Hit;
-	FVector offset = FVector(0.f,0.f,50.f);
-	FVector TraceStart = GetActorLocation() + offset;
-	FVector TraceEnd = (GetActorLocation() + offset) + (FollowCamera->GetForwardVector() * ShootDistance);
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
+		FHitResult Hit;
+		FVector offset = FVector(0.f, 0.f, 50.f);
+		FVector TraceStart = GetActorLocation() + offset;
+		FVector TraceEnd = (GetActorLocation() + offset) + (FollowCamera->GetForwardVector() * ShootDistance);
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
 
-	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+		GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
+		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
 
-	if (Hit.bBlockingHit) {
-		UE_LOG(LogTemp, Warning, TEXT("HIT!"));
+		if (Hit.bBlockingHit) {
+			UE_LOG(LogTemp, Warning, TEXT("HIT!"));
+			IsRooted = true;
 
-		HookedActor = Hit.GetActor();
+			HookedActor = Hit.GetActor();
 
-		if (HookPoint != nullptr) {
-			HookPoint->SetActorLocation(Hit.Location);
+			if (HookPoint != nullptr) {
+				HookPoint->SetActorLocation(Hit.Location);
 
-			HookPoint->AttachToActor(Hit.GetActor(),FAttachmentTransformRules::KeepWorldTransform);
+				HookPoint->AttachToActor(Hit.GetActor(), FAttachmentTransformRules::KeepWorldTransform);
 
-			Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
+				Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
 
-			PhysRope->ConstraintActor1 = HookPoint;
-			PhysRope->ConstraintActor2 = this;
-			PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
-			PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
-			PhysRope->SetDisableCollision(true);
-			PhysRope->SetConstrainedComponents(
-				Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
-				Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
-			PhysRope->SetWorldLocation((GetActorLocation()+HookedActor->GetActorLocation()) * 0.5f);
+				PhysRope->ConstraintActor1 = HookPoint;
+				PhysRope->ConstraintActor2 = this;
+				PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
+				PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
+				PhysRope->SetDisableCollision(true);
+				PhysRope->SetConstrainedComponents(
+					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
+					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
+				PhysRope->SetWorldLocation(((HookedActor->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
+			}
 		}
+	}
+	else {
+		Cable->SetAttachEndTo(NULL, NAME_None, NAME_None);
+		PhysRope->BreakConstraint();
+		IsRooted = false;
 	}
 }
 
