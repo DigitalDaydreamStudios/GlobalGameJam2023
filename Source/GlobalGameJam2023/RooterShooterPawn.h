@@ -19,7 +19,7 @@ public:
 	// Sets default values for this pawn's properties
 	ARooterShooterPawn();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UCapsuleComponent* Capsule;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -179,15 +179,20 @@ void ARooterShooterPawn::Shoot() {
 
 				Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
 
+				PhysRope->Activate();
+				PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
+				FRotator rot = FollowCamera->GetForwardVector().Rotation();
+				PhysRope->SetWorldRotation(rot);
 				PhysRope->ConstraintActor1 = HookPoint;
 				PhysRope->ConstraintActor2 = this;
+				PhysRope->SetLinearXLimit(LCM_Limited,Hit.Distance);
 				PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
 				PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
+				PhysRope->SetAngularTwistLimit(ACM_Free,0.f);
 				PhysRope->SetDisableCollision(true);
 				PhysRope->SetConstrainedComponents(
 					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
 					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
-				PhysRope->SetWorldLocation(((HookedActor->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
 			}
 		}
 	}
@@ -195,6 +200,7 @@ void ARooterShooterPawn::Shoot() {
 		//retract cable
 		Cable->SetAttachEndTo(NULL, NAME_None, NAME_None);
 		PhysRope->BreakConstraint();
+		PhysRope->Deactivate();
 		IsRooted = false;
 		CanShoot = false;
 		GetWorldTimerManager().SetTimer(ShootTimerHandle, this, &ARooterShooterPawn::ResetCanShoot, 1.f, false, 1.f);
