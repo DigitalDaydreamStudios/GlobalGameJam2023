@@ -52,7 +52,7 @@ void UWID_MainMenu::NativeConstruct()
 void UWID_MainMenu::PlayGame()
 {
     //Get the First Level from the DataTable DT_LevelList
-    FName LevelName = "LEV_First";
+    FName LevelName = "LEV_1";
     UGameplayStatics::OpenLevel(GetWorld(), LevelName);
 }
 
