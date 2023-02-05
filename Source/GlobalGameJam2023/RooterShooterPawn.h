@@ -116,7 +116,7 @@ protected:
 	// Pull action
 	void Pull();
 
-	//UPROPERTY(Blu)
+	UFUNCTION(BlueprintImplementableEvent)
 	void Reset();
 
 	void ResetCanShoot();

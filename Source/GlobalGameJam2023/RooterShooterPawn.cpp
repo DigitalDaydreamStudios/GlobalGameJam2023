@@ -241,9 +241,9 @@ void ARooterShooterPawn::Pull() {
 	}
 }
 
-void ARooterShooterPawn::Reset() {
-	UGameplayStatics::OpenLevel(GetWorld(),FName(GetWorld()->GetMapName()));
-}
+//void ARooterShooterPawn::Reset() {
+//	UGameplayStatics::OpenLevel(GetWorld(),FName(GetWorld()->GetMapName()));
+//}
 
 void ARooterShooterPawn::ResetCanShoot() {
 	UE_LOG(LogTemp, Warning, TEXT("RELOAD!"));
