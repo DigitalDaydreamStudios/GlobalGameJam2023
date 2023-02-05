@@ -57,6 +57,8 @@ ARooterShooterPawn::ARooterShooterPawn()
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
 	MoveScale = 1.f;
 
+	CanShoot = true;
+
 	MenuHandler = CreateDefaultSubobject<UMenuHandler>(TEXT("MenuHandler"));
 }
 
@@ -117,14 +119,15 @@ void ARooterShooterPawn::Move(const FInputActionValue& Value)
 	if (Controller != nullptr)
 	{
 		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		//const FRotator Rotation = Controller->GetControlRotation();
+		//const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
+		//// get forward vector
+		//const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector ForwardDirection = FollowCamera->GetForwardVector();
 		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		//const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FVector RightDirection = FollowCamera->GetRightVector();
 
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
@@ -146,6 +149,10 @@ void ARooterShooterPawn::Look(const FInputActionValue& Value)
 }
 
 void ARooterShooterPawn::Shoot() {
+	if (!CanShoot) {
+		UE_LOG(LogTemp, Warning, TEXT("CANNOT SHOOT YET!"));
+		return;
+	}
 	if(!IsRooted){
 		UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
 
@@ -185,10 +192,18 @@ void ARooterShooterPawn::Shoot() {
 		}
 	}
 	else {
+		//retract cable
 		Cable->SetAttachEndTo(NULL, NAME_None, NAME_None);
 		PhysRope->BreakConstraint();
 		IsRooted = false;
+		CanShoot = false;
+		GetWorldTimerManager().SetTimer(ShootTimerHandle, this, &ARooterShooterPawn::ResetCanShoot, 1.f, false, 1.f);
 	}
+}
+
+void ARooterShooterPawn::ResetCanShoot() {
+	UE_LOG(LogTemp, Warning, TEXT("RELOAD!"));
+	CanShoot = true;
 }
 
 void ARooterShooterPawn::CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA)
