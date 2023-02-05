@@ -6,12 +6,15 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "CableComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "RooterPlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "EnhancedInputComponent.h"
+#include "Components/BoxComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h" 
 
@@ -24,6 +27,10 @@ ARooterShooterPawn::ARooterShooterPawn()
 
 	Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
 	SetRootComponent(Capsule);
+	Capsule->SetSimulatePhysics(true);
+
+	if(Capsule == nullptr){ UE_LOG(LogTemp, Warning, TEXT("CAPSULE NULL!")); }
+	
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(Capsule);
@@ -31,13 +38,21 @@ ARooterShooterPawn::ARooterShooterPawn()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(Capsule);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 600.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	Cable = CreateDefaultSubobject<UCableComponent>(TEXT("Cable"));
+	Cable->AttachToComponent(this->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	//Cable->SetComponentTickEnabled(false);
+	//Cable->SetVisibility(false);
+
+	PhysRope = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysRope"));
+
 
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
 	MoveScale = 1.f;
@@ -57,6 +72,10 @@ void ARooterShooterPawn::BeginPlay()
 void ARooterShooterPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	/*if (HookedActor != nullptr) {
+		Cable->EndLocation = HookedActor->GetActorLocation() - GetActorLocation();
+	}*/
 }
 
 // Called to bind functionality to input
@@ -72,6 +91,7 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		check(EIC && RPC);
 		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
 		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
+		EIC->BindAction(ShootAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Shoot);
 
 		ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
 		check(LocalPlayer);
@@ -109,7 +129,6 @@ void ARooterShooterPawn::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
 }
 
 void ARooterShooterPawn::Look(const FInputActionValue& Value)
@@ -123,5 +142,65 @@ void ARooterShooterPawn::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("GOT HERE"));
+}
+
+void ARooterShooterPawn::Shoot() {
+	UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
+
+	FHitResult Hit;
+	FVector offset = FVector(0.f,0.f,50.f);
+	FVector TraceStart = GetActorLocation() + offset;
+	FVector TraceEnd = (GetActorLocation() + offset) + (FollowCamera->GetForwardVector() * ShootDistance);
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+
+	if (Hit.bBlockingHit) {
+		Cable->SetAttachEndTo(Hit.GetActor(), FName(TEXT("Box")), FName(TEXT("")));
+		UE_LOG(LogTemp, Warning, TEXT("HIT!"));
+		PhysRope->ConstraintActor1 = Hit.GetActor();
+		PhysRope->ConstraintActor2 = this;
+		PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
+		PhysRope->SetConstrainedComponents(
+			Cast<UPrimitiveComponent>(Hit.GetActor()->GetComponentByClass(UBoxComponent::StaticClass())),TEXT("Box"),
+			Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
+		PhysRope->SetWorldLocation(GetActorLocation());
+
+		HookedActor = Hit.GetActor();
+	}
+}
+
+void ARooterShooterPawn::CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA)
+{
+	//set up the constraint instance with all the desired values
+	FConstraintInstance ConstraintInstance;
+
+	//set values here, see functions I am sharing with you below
+	//UYourStaticLibrary::SetLinearLimits(ConstraintInstance, ...); //or make the functions below non static
+	//UYourStaticLibrary::SetAngularLimits(ConstraintInstance, ...);
+
+
+		//New Object
+	UPhysicsConstraintComponent* ConstraintComp = NewObject<UPhysicsConstraintComponent>(RootSMA);
+	if (!ConstraintComp)
+	{
+		//UE_LOG constraint UObject could not be created!
+		return;
+	}
+
+	////~~~~~~~~~~~~~~~~~~~~~~~~
+	////Set Constraint Instance!
+	//ConstraintComp->ConstraintInstance = ConstraintInstance;
+	////~~~~~~~~~~~~~~~~~~~~~~~~
+
+	////Set World Location
+	//ConstraintComp->SetWorldLocation(RootSMA->GetActorLocation());
+
+	////Attach to Root!
+	//ConstraintComp->AttachTo(RootSMA->GetRootComponent(), NAME_None, EAttachLocation::KeepWorldPosition);
+
+	////~~~ Init Constraint ~~~
+	//ConstraintComp->SetConstrainedComponents(RootSMA->StaticMeshComponent, NAME_None, TargetSMA->StaticMeshComponent, NAME_None);
 }

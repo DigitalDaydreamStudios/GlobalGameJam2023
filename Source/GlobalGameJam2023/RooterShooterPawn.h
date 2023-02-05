@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
+#include "Engine/StaticMeshActor.h"
 #include "Components/CapsuleComponent.h"
 #include "MenuHandler.h"
 #include "RooterShooterPawn.generated.h"
@@ -36,10 +37,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
 
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* JumpAction;
-
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
@@ -48,14 +45,32 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	/** Shoot Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ShootAction;
+
 	UPROPERTY(EditAnywhere)
 	class UFloatingPawnMovement* Movement;
+
+	UPROPERTY(EditAnywhere)
+	class UCableComponent* Cable;
+
+	UPROPERTY(EditAnywhere)
+	class UPhysicsConstraintComponent* PhysRope;
 
 	UPROPERTY(EditAnywhere)
 	float MoveScale;
 
 	UPROPERTY(EditAnywhere)
 	UMenuHandler* MenuHandler;
+
+	UPROPERTY(EditAnywhere)
+	float ShootDistance = 1000.f;
+
+	class AActor* HookedActor;
+
+protected:
+	class UPhysicsConstraintComponent* PhysConstraint;
 
 protected:
 	// Called when the game starts or when spawned
@@ -67,11 +82,17 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	// Shoot action
+	void Shoot();
+
+	void CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 
 };
