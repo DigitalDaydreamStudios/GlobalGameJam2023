@@ -26,6 +26,7 @@ UMenuHandler::UMenuHandler()
 					PlayerController->bEnableClickEvents = true;
 					PlayerController->bEnableMouseOverEvents = true;
 				}
+
 			}else{
 				UE_LOG(LogTemp, Warning, TEXT("Hello:I'm not on the main menu level and I'm not loading the main menu widget"));
 			}
