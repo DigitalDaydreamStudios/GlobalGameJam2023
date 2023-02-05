@@ -12,13 +12,13 @@ UMenuHandler::UMenuHandler()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hello: I'm a MenuHandler, and I have a WidgetClass"));
 		CustomUserWidgetClass = WID_MainMenu.Class;
-		UCustomUserWidget* Widget = CreateWidget<UCustomUserWidget>(GetWorld(), CustomUserWidgetClass);
-		if(IsValid(Widget))
+		CustomUserWidget = CreateWidget<UCustomUserWidget>(GetWorld(), CustomUserWidgetClass);
+		if(IsValid(CustomUserWidget))
 		{
 			//check what level we are on and load the correct widget
 			if (GetWorld()->GetName() == "LEV_MainMenu"){
 				UE_LOG(LogTemp, Warning, TEXT("Hello:I'm on the main menu level and I'm loading the main menu widget"));
-				Widget->AddToViewport();
+				CustomUserWidget->AddToViewport();
 				// show mouse cursor
 				if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
 				{
