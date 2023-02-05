@@ -77,6 +77,10 @@ protected:
 
 	bool IsRooted;
 
+	bool CanShoot;
+
+	FTimerHandle ShootTimerHandle;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -89,6 +93,8 @@ protected:
 
 	// Shoot action
 	void Shoot();
+
+	void ResetCanShoot();
 
 	void CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA);
 
