@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/CapsuleComponent.h"
+#include "PhysicsEngine/ConstraintInstance.h"
 #include "MenuHandler.h"
 #include "RooterShooterPawn.generated.h"
 
@@ -49,6 +50,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ShootAction;
 
+	/** Pull Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* PullAction;
+
 	UPROPERTY(EditAnywhere)
 	class UFloatingPawnMovement* Movement;
 
@@ -81,6 +86,8 @@ protected:
 
 	FTimerHandle ShootTimerHandle;
 
+	FConstraintInstance ConstraintInstance;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -94,9 +101,14 @@ protected:
 	// Shoot action
 	void Shoot();
 
+	// Pull action
+	void Pull();
+
 	void ResetCanShoot();
 
 	void CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA);
+
+	void SetupConstraintInstance();
 
 public:	
 	// Called every frame
