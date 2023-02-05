@@ -51,8 +51,9 @@ void UWID_MainMenu::NativeConstruct()
 
 void UWID_MainMenu::PlayGame()
 {
-    //Open Level LEV_Skybox
-    UGameplayStatics::OpenLevel(GetWorld(), "LEV_Skybox");
+    //Get the First Level from the DataTable DT_LevelList
+    FName LevelName = "LEV_First";
+    UGameplayStatics::OpenLevel(GetWorld(), LevelName);
 }
 
 void UWID_MainMenu::OpenOptions()
@@ -71,7 +72,6 @@ void UWID_MainMenu::OpenLeaderboard()
     {
         LeaderboardWidget->AddToViewport();
     }
-    
     //Remove self from viewport
     RemoveFromParent();
 }
