@@ -7,6 +7,7 @@
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "HookPoint.h"
+#include "RooterDrill.h"
 #include "CableComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -18,6 +19,7 @@
 #include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Kismet/GameplayStatics.h"
 #include "Engine/LocalPlayer.h" 
 
 
@@ -37,8 +39,8 @@ ARooterShooterPawn::ARooterShooterPawn()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(Capsule);
 
-	ShooterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShooterMesh"));
-	ShooterMesh->SetupAttachment(Capsule);
+	DrillMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DrillMesh"));
+	DrillMesh->SetupAttachment(Capsule);
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -53,8 +55,6 @@ ARooterShooterPawn::ARooterShooterPawn()
 
 	Cable = CreateDefaultSubobject<UCableComponent>(TEXT("Cable"));
 	Cable->AttachToComponent(this->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	//Cable->SetComponentTickEnabled(false);
-	//Cable->SetVisibility(false);
 
 	PhysRope = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysRope"));
 
@@ -70,8 +70,18 @@ void ARooterShooterPawn::BeginPlay()
 	
 	HookPoint = GetWorld()->SpawnActor<AHookPoint>(AHookPoint::StaticClass());
 
-	MoveScale = 100000.f;
+	//if (RooterDrill == nullptr) {
+	//	UE_LOG(LogTemp, Warning, TEXT("No Rooter Drill Found!"));
+	//}
+	//else {
+	//	RooterDrill->SetActorLocation(GetActorLocation());
+	//	RooterDrill->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+	//}
+
+	MoveScale = 0.f;
 	Cable->CableWidth = 25.f;
+
+	DrillMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 
 	SetupConstraintInstance();
 	PhysRope->ConstraintInstance = ConstraintInstance;
@@ -86,6 +96,9 @@ void ARooterShooterPawn::Tick(float DeltaTime)
 
 	if (PhysRope != nullptr) {
 		DrawDebugSphere(GetWorld(), PhysRope->GetComponentLocation(), 10.f, 10, FColor(0, 181, 0), false, -1, 0, 2);
+	}
+	if (IsRooted) {
+		DrillMesh->SetWorldLocation(HookPoint->GetActorLocation());
 	}
 }
 
@@ -103,7 +116,7 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
 		EIC->BindAction(ShootAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Shoot);
 		EIC->BindAction(PullAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Pull);
-
+		EIC->BindAction(ResetAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Reset);
 
 		ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
 		check(LocalPlayer);
@@ -178,6 +191,10 @@ void ARooterShooterPawn::Shoot() {
 				HookPoint->SetActorLocation(Hit.Location);
 				HookPoint->AttachToActor(Hit.GetActor(), FAttachmentTransformRules::KeepWorldTransform);
 
+				FRotator rotator = Hit.Normal.Rotation();
+				rotator.Pitch += 90;
+				DrillMesh->SetWorldRotation(rotator);
+
 				//Setup Cable
 				Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
 				Cable->CableLength = Hit.Distance;
@@ -200,23 +217,32 @@ void ARooterShooterPawn::Shoot() {
 		//retract cable
 		Cable->SetAttachEndTo(NULL, NAME_None, NAME_None);
 		Cable->CableLength = 50.f;
+		HookedActor = nullptr;
 		PhysRope->BreakConstraint();
 		PhysRope->Deactivate();
 		IsRooted = false;
 		CanShoot = false;
+		DrillMesh->SetWorldLocation(GetActorLocation());
+		DrillMesh->SetWorldRotation(GetActorRotation());
 		GetWorldTimerManager().SetTimer(ShootTimerHandle, this, &ARooterShooterPawn::ResetCanShoot, 1.f, false, 1.f);
 	}
 }
 
 void ARooterShooterPawn::Pull() {
 
-	Capsule->AddForce((HookedActor->GetActorLocation() - GetActorLocation()) * PullStrength);
-	
-	float newlimit = PhysRope->ConstraintInstance.GetLinearLimit() * 0.8f;
-	if (newlimit > 200.f) { PhysRope->SetLinearXLimit(LCM_Limited, newlimit); }
-	PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
+	if (IsRooted && HookedActor != nullptr) {
+		Capsule->AddForce((HookedActor->GetActorLocation() - GetActorLocation()) * PullStrength);
 
-	UE_LOG(LogTemp, Warning, TEXT("limiting"));
+		//float newlimit = PhysRope->ConstraintInstance.GetLinearLimit() * 0.8f;
+		//if (newlimit > 200.f) { PhysRope->SetLinearXLimit(LCM_Limited, newlimit); }
+		//PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
+		Cable->CableLength = (HookedActor->GetActorLocation() - GetActorLocation()).Size() * 0.5f;
+		UE_LOG(LogTemp, Warning, TEXT("limiting"));
+	}
+}
+
+void ARooterShooterPawn::Reset() {
+	UGameplayStatics::OpenLevel(GetWorld(),FName(GetWorld()->GetMapName()));
 }
 
 void ARooterShooterPawn::ResetCanShoot() {
