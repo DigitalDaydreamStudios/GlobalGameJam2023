@@ -12,9 +12,6 @@ AHookPoint::AHookPoint()
 
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
 	SetRootComponent(Box);
-
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetupAttachment(Box);
 }
 
 // Called when the game starts or when spawned

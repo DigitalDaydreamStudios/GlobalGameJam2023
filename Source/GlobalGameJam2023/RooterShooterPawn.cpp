@@ -161,20 +161,6 @@ void ARooterShooterPawn::Shoot() {
 
 		HookedActor = Hit.GetActor();
 
-		////CompClass can be a BP
-		//UPrimitiveComponent* NewHookComponent = NewObject<UPrimitiveComponent>(HookedActor);
-		//if (!NewHookComponent)
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("Attach Location Creation Failed!"));
-		//}
-		////~~~~~~~~~~~~~
-
-		//NewHookComponent->SetupAttachment(HookedActor->GetRootComponent());
-		//NewHookComponent->RegisterComponent();
-		//HookedActor->AddInstanceComponent(NewHookComponent);
-		//NewHookComponent->SetRelativeLocation(Hit.Location-HookedActor->GetActorLocation());
-		//NewHookComponent->Rename(TEXT("HookPoint"));
-
 		if (HookPoint != nullptr) {
 			HookPoint->SetActorLocation(Hit.Location);
 
@@ -192,19 +178,6 @@ void ARooterShooterPawn::Shoot() {
 				Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
 			PhysRope->SetWorldLocation((GetActorLocation()+HookedActor->GetActorLocation()) * 0.5f);
 		}
-
-		//Cable->SetAttachEndTo(Hit.GetActor(), FName(TEXT("HookPoint")), FName(TEXT("")));
-
-		//PhysRope->ConstraintActor1 = Hit.GetActor();
-		//PhysRope->ConstraintActor2 = this;
-		//PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
-		//PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
-		//PhysRope->SetDisableCollision(true);
-		//PhysRope->SetConstrainedComponents(
-		//	//Cast<UPrimitiveComponent>(Hit.GetActor()->GetComponentByClass(UBoxComponent::StaticClass())),TEXT("Box"),
-		//	Cast<UPrimitiveComponent>(NewHookComponent), TEXT("HookPoint"),
-		//	Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
-		//PhysRope->SetWorldLocation((GetActorLocation()+HookedActor->GetActorLocation()) * 0.5f);
 	}
 }
 
