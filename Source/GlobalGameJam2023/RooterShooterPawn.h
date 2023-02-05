@@ -26,6 +26,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* StaticMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* ShooterMesh;
+
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -55,9 +58,6 @@ public:
 	class UInputAction* PullAction;
 
 	UPROPERTY(EditAnywhere)
-	class UFloatingPawnMovement* Movement;
-
-	UPROPERTY(EditAnywhere)
 	class UCableComponent* Cable;
 
 	UPROPERTY(EditAnywhere)
@@ -65,6 +65,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float MoveScale;
+
+	UPROPERTY(EditAnywhere)
+	float PullStrength = 500.f;
 
 	UPROPERTY(EditAnywhere)
 	UMenuHandler* MenuHandler;
