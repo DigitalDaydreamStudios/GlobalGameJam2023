@@ -22,7 +22,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UCapsuleComponent* Capsule;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* StaticMesh;
 
 	/** Camera boom positioning the camera behind the character */
@@ -30,7 +30,7 @@ public:
 	class USpringArmComponent* CameraBoom;
 
 	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
 	///** MappingContext */
@@ -65,12 +65,21 @@ public:
 	UMenuHandler* MenuHandler;
 
 	UPROPERTY(EditAnywhere)
-	float ShootDistance = 1000.f;
+	float ShootDistance = 3000.f;
 
 	class AActor* HookedActor;
 
+	UPROPERTY(EditAnywhere)
+	class AHookPoint* HookPoint;
+
 protected:
 	class UPhysicsConstraintComponent* PhysConstraint;
+
+	bool IsRooted;
+
+	bool CanShoot;
+
+	FTimerHandle ShootTimerHandle;
 
 protected:
 	// Called when the game starts or when spawned
@@ -84,6 +93,8 @@ protected:
 
 	// Shoot action
 	void Shoot();
+
+	void ResetCanShoot();
 
 	void CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA);
 

@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "HookPoint.h"
 #include "CableComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -28,9 +29,9 @@ ARooterShooterPawn::ARooterShooterPawn()
 	Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
 	SetRootComponent(Capsule);
 	Capsule->SetSimulatePhysics(true);
+	Capsule->SetEnableGravity(false);
 
 	if(Capsule == nullptr){ UE_LOG(LogTemp, Warning, TEXT("CAPSULE NULL!")); }
-	
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(Capsule);
@@ -53,9 +54,10 @@ ARooterShooterPawn::ARooterShooterPawn()
 
 	PhysRope = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysRope"));
 
-
 	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
 	MoveScale = 1.f;
+
+	CanShoot = true;
 
 	MenuHandler = CreateDefaultSubobject<UMenuHandler>(TEXT("MenuHandler"));
 }
@@ -65,6 +67,8 @@ void ARooterShooterPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	HookPoint = GetWorld()->SpawnActor<AHookPoint>(AHookPoint::StaticClass());
+
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a RooterShooterPawn"));
 }
 
@@ -73,9 +77,9 @@ void ARooterShooterPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	/*if (HookedActor != nullptr) {
-		Cable->EndLocation = HookedActor->GetActorLocation() - GetActorLocation();
-	}*/
+	if (PhysRope != nullptr) {
+		DrawDebugSphere(GetWorld(), PhysRope->GetComponentLocation(), 10.f, 10, FColor(0, 181, 0), false, -1, 0, 2);
+	}
 }
 
 // Called to bind functionality to input
@@ -84,7 +88,6 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-	//APlayerController* RPC = Cast<APlayerController>(Controller);
 	ARooterPlayerController* RPC = Cast<ARooterPlayerController>(Controller);
 	
 	if (RPC != nullptr) {
@@ -116,14 +119,15 @@ void ARooterShooterPawn::Move(const FInputActionValue& Value)
 	if (Controller != nullptr)
 	{
 		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		//const FRotator Rotation = Controller->GetControlRotation();
+		//const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
+		//// get forward vector
+		//const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector ForwardDirection = FollowCamera->GetForwardVector();
 		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		//const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FVector RightDirection = FollowCamera->GetRightVector();
 
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
@@ -145,31 +149,61 @@ void ARooterShooterPawn::Look(const FInputActionValue& Value)
 }
 
 void ARooterShooterPawn::Shoot() {
-	UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
-
-	FHitResult Hit;
-	FVector offset = FVector(0.f,0.f,50.f);
-	FVector TraceStart = GetActorLocation() + offset;
-	FVector TraceEnd = (GetActorLocation() + offset) + (FollowCamera->GetForwardVector() * ShootDistance);
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
-
-	if (Hit.bBlockingHit) {
-		Cable->SetAttachEndTo(Hit.GetActor(), FName(TEXT("Box")), FName(TEXT("")));
-		UE_LOG(LogTemp, Warning, TEXT("HIT!"));
-		PhysRope->ConstraintActor1 = Hit.GetActor();
-		PhysRope->ConstraintActor2 = this;
-		PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
-		PhysRope->SetConstrainedComponents(
-			Cast<UPrimitiveComponent>(Hit.GetActor()->GetComponentByClass(UBoxComponent::StaticClass())),TEXT("Box"),
-			Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
-		PhysRope->SetWorldLocation(GetActorLocation());
-
-		HookedActor = Hit.GetActor();
+	if (!CanShoot) {
+		UE_LOG(LogTemp, Warning, TEXT("CANNOT SHOOT YET!"));
+		return;
 	}
+	if(!IsRooted){
+		UE_LOG(LogTemp, Warning, TEXT("Shooot!"));
+
+		FHitResult Hit;
+		FVector offset = FVector(0.f, 0.f, 50.f);
+		FVector TraceStart = GetActorLocation() + offset;
+		FVector TraceEnd = (GetActorLocation() + offset) + (FollowCamera->GetForwardVector() * ShootDistance);
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+
+		GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
+		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+
+		if (Hit.bBlockingHit) {
+			UE_LOG(LogTemp, Warning, TEXT("HIT!"));
+			IsRooted = true;
+
+			HookedActor = Hit.GetActor();
+
+			if (HookPoint != nullptr) {
+				HookPoint->SetActorLocation(Hit.Location);
+
+				HookPoint->AttachToActor(Hit.GetActor(), FAttachmentTransformRules::KeepWorldTransform);
+
+				Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
+
+				PhysRope->ConstraintActor1 = HookPoint;
+				PhysRope->ConstraintActor2 = this;
+				PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
+				PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
+				PhysRope->SetDisableCollision(true);
+				PhysRope->SetConstrainedComponents(
+					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
+					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
+				PhysRope->SetWorldLocation(((HookedActor->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
+			}
+		}
+	}
+	else {
+		//retract cable
+		Cable->SetAttachEndTo(NULL, NAME_None, NAME_None);
+		PhysRope->BreakConstraint();
+		IsRooted = false;
+		CanShoot = false;
+		GetWorldTimerManager().SetTimer(ShootTimerHandle, this, &ARooterShooterPawn::ResetCanShoot, 1.f, false, 1.f);
+	}
+}
+
+void ARooterShooterPawn::ResetCanShoot() {
+	UE_LOG(LogTemp, Warning, TEXT("RELOAD!"));
+	CanShoot = true;
 }
 
 void ARooterShooterPawn::CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA)
