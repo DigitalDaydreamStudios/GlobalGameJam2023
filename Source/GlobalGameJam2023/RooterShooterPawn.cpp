@@ -116,7 +116,10 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
 		EIC->BindAction(ShootAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Shoot);
 		EIC->BindAction(PullAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Pull);
+		EIC->BindAction(PullAction, ETriggerEvent::Started, this, &ARooterShooterPawn::StartPull);
+		EIC->BindAction(PullAction, ETriggerEvent::Completed, this, &ARooterShooterPawn::StopPull);
 		EIC->BindAction(ResetAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Reset);
+
 
 		ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
 		check(LocalPlayer);
@@ -188,6 +191,9 @@ void ARooterShooterPawn::Shoot() {
 			HookedActor = Hit.GetActor();
 
 			if (HookPoint != nullptr) {
+				//play sound
+				PlayShootSound();
+
 				HookPoint->SetActorLocation(Hit.Location);
 				HookPoint->AttachToActor(Hit.GetActor(), FAttachmentTransformRules::KeepWorldTransform);
 
@@ -211,6 +217,9 @@ void ARooterShooterPawn::Shoot() {
 					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
 					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
 			}
+		}
+		else {
+			PlayMissSound();
 		}
 	}
 	else {
@@ -237,25 +246,30 @@ void ARooterShooterPawn::Pull() {
 		//if (newlimit > 200.f) { PhysRope->SetLinearXLimit(LCM_Limited, newlimit); }
 		//PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
 		Cable->CableLength = (HookedActor->GetActorLocation() - GetActorLocation()).Size() * 0.5f;
-		UE_LOG(LogTemp, Warning, TEXT("limiting"));
+		
 	}
 }
 
-//void ARooterShooterPawn::Reset() {
-//	UGameplayStatics::OpenLevel(GetWorld(),FName(GetWorld()->GetMapName()));
-//}
+void ARooterShooterPawn::StartPull() {
+	UE_LOG(LogTemp, Warning, TEXT("StartPull"));
+}
+
+void ARooterShooterPawn::StopPull() {
+	UE_LOG(LogTemp, Warning, TEXT("StopPull"));
+}
 
 void ARooterShooterPawn::ResetCanShoot() {
 	UE_LOG(LogTemp, Warning, TEXT("RELOAD!"));
 	CanShoot = true;
+	PlayReloadSound();
 }
 
 void ARooterShooterPawn::SetupConstraintInstance() {
 	//Angular
 	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = 1;
 	ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = 1;
-	ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 30.f);
-	ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 30.f);
+	ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
+	ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
 	ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.f);
 	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 50.f;
 	ConstraintInstance.ProfileInstance.LinearLimit.Damping = 5.f;
