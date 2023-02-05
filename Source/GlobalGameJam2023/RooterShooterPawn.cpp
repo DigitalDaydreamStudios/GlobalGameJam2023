@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "HookPoint.h"
 #include "CableComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -65,6 +66,8 @@ void ARooterShooterPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	HookPoint = GetWorld()->SpawnActor<AHookPoint>(AHookPoint::StaticClass());
+
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a RooterShooterPawn"));
 }
 
@@ -158,17 +161,27 @@ void ARooterShooterPawn::Shoot() {
 	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
 
 	if (Hit.bBlockingHit) {
-		Cable->SetAttachEndTo(Hit.GetActor(), FName(TEXT("Box")), FName(TEXT("")));
 		UE_LOG(LogTemp, Warning, TEXT("HIT!"));
-		PhysRope->ConstraintActor1 = Hit.GetActor();
-		PhysRope->ConstraintActor2 = this;
-		PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
-		PhysRope->SetConstrainedComponents(
-			Cast<UPrimitiveComponent>(Hit.GetActor()->GetComponentByClass(UBoxComponent::StaticClass())),TEXT("Box"),
-			Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
-		PhysRope->SetWorldLocation(GetActorLocation());
 
 		HookedActor = Hit.GetActor();
+
+		if (HookPoint != nullptr) {
+			HookPoint->SetActorLocation(Hit.Location);
+
+			HookPoint->AttachToActor(Hit.GetActor(),FAttachmentTransformRules::KeepWorldTransform);
+
+			Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
+
+			PhysRope->ConstraintActor1 = HookPoint;
+			PhysRope->ConstraintActor2 = this;
+			PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
+			PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
+			PhysRope->SetDisableCollision(true);
+			PhysRope->SetConstrainedComponents(
+				Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
+				Cast<UPrimitiveComponent>(Capsule),TEXT("Capsule"));
+			PhysRope->SetWorldLocation((GetActorLocation()+HookedActor->GetActorLocation()) * 0.5f);
+		}
 	}
 }
 

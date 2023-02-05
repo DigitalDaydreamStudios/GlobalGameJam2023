@@ -69,6 +69,9 @@ public:
 
 	class AActor* HookedActor;
 
+	UPROPERTY(EditAnywhere)
+	class AHookPoint* HookPoint;
+
 protected:
 	class UPhysicsConstraintComponent* PhysConstraint;
 
