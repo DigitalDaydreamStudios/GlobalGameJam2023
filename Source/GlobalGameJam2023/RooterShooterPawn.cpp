@@ -37,6 +37,9 @@ ARooterShooterPawn::ARooterShooterPawn()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(Capsule);
 
+	ShooterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShooterMesh"));
+	ShooterMesh->SetupAttachment(Capsule);
+
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(Capsule);
@@ -55,9 +58,6 @@ ARooterShooterPawn::ARooterShooterPawn()
 
 	PhysRope = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysRope"));
 
-	Movement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
-	MoveScale = 1.f;
-
 	CanShoot = true;
 
 	MenuHandler = CreateDefaultSubobject<UMenuHandler>(TEXT("MenuHandler"));
@@ -69,6 +69,9 @@ void ARooterShooterPawn::BeginPlay()
 	Super::BeginPlay();
 	
 	HookPoint = GetWorld()->SpawnActor<AHookPoint>(AHookPoint::StaticClass());
+
+	MoveScale = 100000.f;
+	Cable->CableWidth = 25.f;
 
 	SetupConstraintInstance();
 	PhysRope->ConstraintInstance = ConstraintInstance;
@@ -117,27 +120,20 @@ void ARooterShooterPawn::Move(const FInputActionValue& Value)
 {
 	FVector Input = Value.Get<FInputActionValue::Axis3D>();
 
-	//AddMovementInput(GetActorRotation().RotateVector(Input), MoveScale);
-
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
-		// find out which way is forward
-		//const FRotator Rotation = Controller->GetControlRotation();
-		//const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		//// get forward vector
-		//const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		const FVector ForwardDirection = FollowCamera->GetForwardVector();
 		// get right vector 
-		//const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		const FVector RightDirection = FollowCamera->GetRightVector();
 
 		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		Capsule->AddForce(ForwardDirection * MoveScale * MovementVector.Y);
+		Capsule->AddForce(RightDirection * MoveScale * MovementVector.X);
 	}
 }
 
@@ -180,21 +176,20 @@ void ARooterShooterPawn::Shoot() {
 
 			if (HookPoint != nullptr) {
 				HookPoint->SetActorLocation(Hit.Location);
-
 				HookPoint->AttachToActor(Hit.GetActor(), FAttachmentTransformRules::KeepWorldTransform);
 
+				//Setup Cable
 				Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
+				Cable->CableLength = Hit.Distance;
 
+				//Setup PhysicsConstraint
 				PhysRope->Activate();
-
-				//SetupConstraintInstance();
-				//PhysRope->ConstraintInstance = ConstraintInstance;
 				PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
 				FRotator rot = FollowCamera->GetForwardVector().Rotation();
 				PhysRope->SetWorldRotation(rot);
 				PhysRope->ConstraintActor1 = HookPoint;
 				PhysRope->ConstraintActor2 = this;
-				PhysRope->SetLinearXLimit(LCM_Limited,Hit.Distance);
+				PhysRope->SetLinearXLimit(LCM_Limited,Hit.Distance/2.f);
 				PhysRope->SetConstrainedComponents(
 					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
 					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
@@ -204,6 +199,7 @@ void ARooterShooterPawn::Shoot() {
 	else {
 		//retract cable
 		Cable->SetAttachEndTo(NULL, NAME_None, NAME_None);
+		Cable->CableLength = 50.f;
 		PhysRope->BreakConstraint();
 		PhysRope->Deactivate();
 		IsRooted = false;
@@ -213,8 +209,13 @@ void ARooterShooterPawn::Shoot() {
 }
 
 void ARooterShooterPawn::Pull() {
-	float newlimit = ((HookPoint->GetActorLocation()) - GetActorLocation()).Size()-10.f;
-	PhysRope->SetLinearXLimit(LCM_Limited, newlimit);
+
+	Capsule->AddForce((HookedActor->GetActorLocation() - GetActorLocation()) * PullStrength);
+	
+	float newlimit = PhysRope->ConstraintInstance.GetLinearLimit() * 0.8f;
+	if (newlimit > 200.f) { PhysRope->SetLinearXLimit(LCM_Limited, newlimit); }
+	PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
+
 	UE_LOG(LogTemp, Warning, TEXT("limiting"));
 }
 
