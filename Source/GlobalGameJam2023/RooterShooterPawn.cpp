@@ -253,15 +253,19 @@ void ARooterShooterPawn::Pull() {
 }
 
 void ARooterShooterPawn::StartPull() {
-	UE_LOG(LogTemp, Warning, TEXT("StartPull"));
-	ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Free);
+	if (IsRooted && HookedActor != nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("StartPull"));
+		ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Free);
+	}
 }
 
 void ARooterShooterPawn::StopPull() {
-	UE_LOG(LogTemp, Warning, TEXT("StopPull"));
-	PhysRope->SetWorldLocation(HookPoint->GetActorLocation());
-	PhysRope->SetLinearXLimit(LCM_Limited, (HookedActor->GetActorLocation() - GetActorLocation()).Size());
-	ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Limited);
+	if (IsRooted && HookedActor != nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("StopPull"));
+		PhysRope->SetWorldLocation(HookPoint->GetActorLocation());
+		PhysRope->SetLinearXLimit(LCM_Limited, (HookedActor->GetActorLocation() - GetActorLocation()).Size());
+		ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Limited);
+	}
 }
 
 void ARooterShooterPawn::ResetCanShoot() {
