@@ -14,6 +14,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicsEngine/ConstraintInstance.h"
 #include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -69,6 +70,9 @@ void ARooterShooterPawn::BeginPlay()
 	
 	HookPoint = GetWorld()->SpawnActor<AHookPoint>(AHookPoint::StaticClass());
 
+	SetupConstraintInstance();
+	PhysRope->ConstraintInstance = ConstraintInstance;
+
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Hello: I'm a RooterShooterPawn"));
 }
 
@@ -95,6 +99,8 @@ void ARooterShooterPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Move);
 		EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Look);
 		EIC->BindAction(ShootAction, ETriggerEvent::Started, this, &ARooterShooterPawn::Shoot);
+		EIC->BindAction(PullAction, ETriggerEvent::Triggered, this, &ARooterShooterPawn::Pull);
+
 
 		ULocalPlayer* LocalPlayer = RPC->GetLocalPlayer();
 		check(LocalPlayer);
@@ -180,16 +186,15 @@ void ARooterShooterPawn::Shoot() {
 				Cable->SetAttachEndTo(HookPoint, FName(TEXT("Box")), FName(TEXT("")));
 
 				PhysRope->Activate();
+
+				//SetupConstraintInstance();
+				//PhysRope->ConstraintInstance = ConstraintInstance;
 				PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
 				FRotator rot = FollowCamera->GetForwardVector().Rotation();
 				PhysRope->SetWorldRotation(rot);
 				PhysRope->ConstraintActor1 = HookPoint;
 				PhysRope->ConstraintActor2 = this;
 				PhysRope->SetLinearXLimit(LCM_Limited,Hit.Distance);
-				PhysRope->SetAngularSwing1Limit(ACM_Limited, 20.f);
-				PhysRope->SetAngularSwing2Limit(ACM_Limited, 40.f);
-				PhysRope->SetAngularTwistLimit(ACM_Free,0.f);
-				PhysRope->SetDisableCollision(true);
 				PhysRope->SetConstrainedComponents(
 					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
 					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
@@ -207,40 +212,40 @@ void ARooterShooterPawn::Shoot() {
 	}
 }
 
+void ARooterShooterPawn::Pull() {
+	float newlimit = ((HookPoint->GetActorLocation()) - GetActorLocation()).Size()-10.f;
+	PhysRope->SetLinearXLimit(LCM_Limited, newlimit);
+	UE_LOG(LogTemp, Warning, TEXT("limiting"));
+}
+
 void ARooterShooterPawn::ResetCanShoot() {
 	UE_LOG(LogTemp, Warning, TEXT("RELOAD!"));
 	CanShoot = true;
 }
 
-void ARooterShooterPawn::CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA)
-{
-	//set up the constraint instance with all the desired values
-	FConstraintInstance ConstraintInstance;
+void ARooterShooterPawn::SetupConstraintInstance() {
+	//Angular
+	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = 1;
+	ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = 1;
+	ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 30.f);
+	ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 30.f);
+	ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.f);
+	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 50.f;
+	ConstraintInstance.ProfileInstance.LinearLimit.Damping = 5.f;
+	ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = 50.f;
+	ConstraintInstance.ProfileInstance.TwistLimit.Damping = 5.f;
 
-	//set values here, see functions I am sharing with you below
-	//UYourStaticLibrary::SetLinearLimits(ConstraintInstance, ...); //or make the functions below non static
-	//UYourStaticLibrary::SetAngularLimits(ConstraintInstance, ...);
+	//Linear
+	ConstraintInstance.ProfileInstance.bDisableCollision = 1;
+	ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Limited);
+	ConstraintInstance.SetLinearYMotion(ELinearConstraintMotion::LCM_Locked);
+	ConstraintInstance.SetLinearZMotion(ELinearConstraintMotion::LCM_Locked);
+	ConstraintInstance.SetLinearLimitSize(50.f);
+	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = 1;
+	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 50.f;
+	ConstraintInstance.ProfileInstance.LinearLimit.Damping = 5.f;
 
-
-		//New Object
-	UPhysicsConstraintComponent* ConstraintComp = NewObject<UPhysicsConstraintComponent>(RootSMA);
-	if (!ConstraintComp)
-	{
-		//UE_LOG constraint UObject could not be created!
-		return;
-	}
-
-	////~~~~~~~~~~~~~~~~~~~~~~~~
-	////Set Constraint Instance!
-	//ConstraintComp->ConstraintInstance = ConstraintInstance;
-	////~~~~~~~~~~~~~~~~~~~~~~~~
-
-	////Set World Location
-	//ConstraintComp->SetWorldLocation(RootSMA->GetActorLocation());
-
-	////Attach to Root!
-	//ConstraintComp->AttachTo(RootSMA->GetRootComponent(), NAME_None, EAttachLocation::KeepWorldPosition);
-
-	////~~~ Init Constraint ~~~
-	//ConstraintComp->SetConstrainedComponents(RootSMA->StaticMeshComponent, NAME_None, TargetSMA->StaticMeshComponent, NAME_None);
+	UE_LOG(LogTemp, Warning, TEXT("SETTING UP"));
 }
+
+
