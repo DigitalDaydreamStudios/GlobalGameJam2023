@@ -27,7 +27,7 @@ public:
 	class UStaticMeshComponent* StaticMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UStaticMeshComponent* ShooterMesh;
+	class UStaticMeshComponent* DrillMesh;
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -57,6 +57,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* PullAction;
 
+	/** Pull Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ResetAction;
+
+
 	UPROPERTY(EditAnywhere)
 	class UCableComponent* Cable;
 
@@ -64,7 +69,7 @@ public:
 	class UPhysicsConstraintComponent* PhysRope;
 
 	UPROPERTY(EditAnywhere)
-	float MoveScale;
+	float MoveScale = 0.f;
 
 	UPROPERTY(EditAnywhere)
 	float PullStrength = 500.f;
@@ -79,6 +84,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class AHookPoint* HookPoint;
+
+	//UPROPERTY(EditAnywhere)
+	//class ARooterDrill* RooterDrill;
+
 
 protected:
 	class UPhysicsConstraintComponent* PhysConstraint;
@@ -106,6 +115,9 @@ protected:
 
 	// Pull action
 	void Pull();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void Reset();
 
 	void ResetCanShoot();
 
