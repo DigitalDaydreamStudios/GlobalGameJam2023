@@ -116,14 +116,25 @@ protected:
 	// Pull action
 	void Pull();
 
+	void StartPull();
+
+	void StopPull();
+
 	UFUNCTION(BlueprintImplementableEvent)
 	void Reset();
 
 	void ResetCanShoot();
 
-	void CreatePhysConstraintBetween(AStaticMeshActor* RootSMA, AStaticMeshActor* TargetSMA);
-
 	void SetupConstraintInstance();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayReloadSound();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayShootSound();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayMissSound();
 
 public:	
 	// Called every frame
