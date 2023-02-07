@@ -78,7 +78,6 @@ void ARooterShooterPawn::BeginPlay()
 	//	RooterDrill->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 	//}
 
-	MoveScale = 0.f;
 	Cable->CableWidth = 25.f;
 
 	DrillMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -209,12 +208,13 @@ void ARooterShooterPawn::Shoot() {
 				PhysRope->Activate();
 				//PhysRope->SetWorldLocation(((HookPoint->GetActorLocation() - GetActorLocation()) * 0.5f) + GetActorLocation());
 				PhysRope->SetWorldLocation(HookPoint->GetActorLocation());
-
 				FRotator rot = FollowCamera->GetForwardVector().Rotation();
 				PhysRope->SetWorldRotation(rot);
+
 				PhysRope->ConstraintActor1 = HookPoint;
 				PhysRope->ConstraintActor2 = this;
-				PhysRope->SetLinearXLimit(LCM_Limited,Hit.Distance);
+
+				PhysRope->SetLinearXLimit(LCM_Limited,10.f);
 				PhysRope->SetConstrainedComponents(
 					Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
 					Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
@@ -255,7 +255,7 @@ void ARooterShooterPawn::Pull() {
 void ARooterShooterPawn::StartPull() {
 	if (IsRooted && HookedActor != nullptr) {
 		UE_LOG(LogTemp, Warning, TEXT("StartPull"));
-		ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Free);
+		PhysRope->SetLinearXLimit(LCM_Free, 10.f);
 	}
 }
 
@@ -263,8 +263,12 @@ void ARooterShooterPawn::StopPull() {
 	if (IsRooted && HookedActor != nullptr) {
 		UE_LOG(LogTemp, Warning, TEXT("StopPull"));
 		PhysRope->SetWorldLocation(HookPoint->GetActorLocation());
-		PhysRope->SetLinearXLimit(LCM_Limited, (HookedActor->GetActorLocation() - GetActorLocation()).Size());
-		ConstraintInstance.SetLinearXMotion(ELinearConstraintMotion::LCM_Limited);
+		//PhysRope->SetLinearXLimit(LCM_Limited, (HookedActor->GetActorLocation() - GetActorLocation()).Size());
+		PhysRope->SetLinearXLimit(LCM_Limited, 10.f);
+		PhysRope->BreakConstraint();
+		PhysRope->SetConstrainedComponents(
+			Cast<UPrimitiveComponent>(HookPoint->GetRootComponent()), TEXT("Box"),
+			Cast<UPrimitiveComponent>(Capsule), TEXT("Capsule"));
 	}
 }
 
