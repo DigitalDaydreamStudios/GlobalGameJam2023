@@ -77,7 +77,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMenuHandler* MenuHandler;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float ShootDistance = 3000.f;
 
 	class AActor* HookedActor;
