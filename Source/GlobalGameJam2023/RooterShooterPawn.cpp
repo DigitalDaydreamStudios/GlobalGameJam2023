@@ -282,8 +282,8 @@ void ARooterShooterPawn::SetupConstraintInstance() {
 	//Angular
 	ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = 1;
 	ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = 1;
-	ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 70.f);
-	ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 70.f);
+	ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
+	ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
 	ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Free, 0.f);
 	ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = 30.f;
 	ConstraintInstance.ProfileInstance.LinearLimit.Damping = 5.f;
