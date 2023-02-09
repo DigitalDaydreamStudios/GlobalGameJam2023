@@ -136,6 +136,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayMissSound();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayUnhookSound();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
