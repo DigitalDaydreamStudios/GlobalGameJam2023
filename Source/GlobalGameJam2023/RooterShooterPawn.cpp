@@ -236,6 +236,7 @@ void ARooterShooterPawn::Shoot() {
 		DrillMesh->SetWorldLocation(GetActorLocation());
 		DrillMesh->SetWorldRotation(GetActorRotation());
 		GetWorldTimerManager().SetTimer(ShootTimerHandle, this, &ARooterShooterPawn::ResetCanShoot, 1.f, false, 1.f);
+		PlayUnhookSound();
 	}
 }
 
